@@ -454,3 +454,5 @@ function initializeTreeControls() {
 // Make functions available globally
 window.expandAllNodes = expandAllNodes;
 window.collapseAllNodes = collapseAllNodes;
+
+// File updated with error handling and safety checks

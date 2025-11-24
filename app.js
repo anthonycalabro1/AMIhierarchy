@@ -9,9 +9,16 @@ async function loadData() {
     const loadingIndicator = document.getElementById('loading-indicator');
     const mainContent = document.getElementById('main-content');
     
-    try {
+    // Reset loading indicator to default state
+    if (loadingIndicator) {
         loadingIndicator.style.display = 'block';
+        loadingIndicator.innerHTML = '<div style="font-size: 1.2em; color: #667eea; margin-bottom: 10px;">Loading process data...</div><div style="color: #666;">Please wait while we load the hierarchy data.</div>';
+    }
+    if (mainContent) {
         mainContent.style.display = 'none';
+    }
+    
+    try {
         
         console.log('Loading hierarchy data...');
         const hierarchyResponse = await fetch('hierarchy-data.json');
@@ -29,35 +36,67 @@ async function loadData() {
         searchIndex = await searchResponse.json();
         console.log('Search index loaded:', searchIndex.length, 'entries');
         
-        // Initialize application
-        updateStatistics();
-        initializeQuickJump();
-        initializeGapForm();
-        initializeViewSwitching();
+        // Initialize application (wrap each in try-catch to prevent one failure from breaking everything)
+        try {
+            updateStatistics();
+        } catch (e) {
+            console.error('Error updating statistics:', e);
+        }
+        
+        try {
+            initializeQuickJump();
+        } catch (e) {
+            console.error('Error initializing quick jump:', e);
+        }
+        
+        try {
+            initializeGapForm();
+        } catch (e) {
+            console.error('Error initializing gap form:', e);
+        }
+        
+        try {
+            initializeViewSwitching();
+        } catch (e) {
+            console.error('Error initializing view switching:', e);
+        }
         
         // Initialize views
-        if (typeof initializeNavigation === 'function') {
-            initializeNavigation();
-        }
-        // Don't initialize tree view on load - wait until user switches to it
-        // if (typeof initializeTreeView === 'function') {
-        //     initializeTreeView();
-        // }
-        if (typeof initializeSearch === 'function') {
-            initializeSearch();
+        try {
+            if (typeof initializeNavigation === 'function') {
+                initializeNavigation();
+            }
+        } catch (e) {
+            console.error('Error initializing navigation:', e);
         }
         
+        // Don't initialize tree view on load - wait until user switches to it
+        // Tree view will be initialized when user clicks the Tree View tab
+        
+        try {
+            if (typeof initializeSearch === 'function') {
+                initializeSearch();
+            }
+        } catch (e) {
+            console.error('Error initializing search:', e);
+        }
+        
+        // Clear any error messages and show main content
         loadingIndicator.style.display = 'none';
+        loadingIndicator.innerHTML = '<div style="font-size: 1.2em; color: #667eea; margin-bottom: 10px;">Loading process data...</div><div style="color: #666;">Please wait while we load the hierarchy data.</div>';
         mainContent.style.display = 'flex';
         
         console.log('Application initialized successfully');
     } catch (error) {
         console.error('Error loading data:', error);
+        loadingIndicator.style.display = 'block';
         loadingIndicator.innerHTML = `
             <div style="color: #d32f2f; font-size: 1.2em; margin-bottom: 10px;">Error loading data</div>
             <div style="color: #666;">${error.message}</div>
             <div style="color: #666; margin-top: 10px;">Please ensure hierarchy-data.json and search-index.json are in the same directory.</div>
         `;
+        // Still try to show main content even if there's an error
+        mainContent.style.display = 'flex';
     }
 }
 
