@@ -1,1 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Hierarchy Visualization</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+                <h1 style="margin: 0; font-size: 1.5em;">Process Hierarchy Explorer</h1>
+                <div class="quick-jump-container" style="flex: 1; max-width: 400px; margin: 0;">
+                    <input type="text" id="quick-jump" class="quick-jump-input" placeholder="Search and jump to any process..." autocomplete="off">
+                    <div id="quick-jump-results" class="quick-jump-results"></div>
+                </div>
+            </div>
+        </header>
 
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-number" id="stat-l1">-</div>
+                <div class="stat-label">Level 1 Processes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-l2">-</div>
+                <div class="stat-label">Level 2 Processes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-l3">-</div>
+                <div class="stat-label">Level 3 Processes</div>
+            </div>
+            <div class="stat-card stat-card-expanded">
+                <div class="stat-label">IT Release Breakdown</div>
+                <div class="stat-details" id="it-release-stats"></div>
+            </div>
+        </div>
+
+        <div id="loading-indicator" style="display: none; padding: 40px; text-align: center; background: #f0f4ff; border-radius: 8px; margin: 20px;">
+            <div style="font-size: 1.2em; color: #667eea; margin-bottom: 10px;">Loading process data...</div>
+            <div style="color: #666;">Please wait while we load the hierarchy data.</div>
+        </div>
+
+        <div class="main-content" id="main-content" style="display: none;">
+            <div class="left-panel">
+                <div class="view-selector">
+                    <button class="view-btn active" data-view="navigation">Navigation</button>
+                    <button class="view-btn" data-view="tree">Tree View</button>
+                    <button class="view-btn" data-view="search">Search</button>
+                </div>
+
+                <!-- Navigation View -->
+                <div id="navigation-view" class="view-panel active">
+                    <div class="breadcrumb" id="breadcrumb"></div>
+                    <div id="navigation-content" style="flex: 1; min-height: 0; overflow-y: auto;"></div>
+                </div>
+
+                <!-- Tree View -->
+                <div id="tree-view" class="view-panel">
+                    <div class="tree-controls">
+                        <div class="tree-filter-controls">
+                            <select id="tree-filter-itrelease" class="tree-filter">
+                                <option value="">All IT Releases</option>
+                            </select>
+                            <select id="tree-filter-usecase" class="tree-filter">
+                                <option value="">All Use Cases</option>
+                            </select>
+                        </div>
+                        <div class="tree-expand-controls">
+                            <button id="tree-expand-all" class="tree-control-btn">Expand All</button>
+                            <button id="tree-collapse-all" class="tree-control-btn">Collapse All</button>
+                        </div>
+                    </div>
+                    <div id="tree-container"></div>
+                </div>
+
+                <!-- Search View -->
+                <div id="search-view" class="view-panel">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Search processes, objectives, use cases... (e.g., 'processes for handling meter failures')">
+                        <button id="search-btn">Search</button>
+                    </div>
+                    <div id="search-results"></div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="detail-panel" id="detail-panel">
+                    <div class="detail-placeholder">
+                        <p>Select a process to view details</p>
+                    </div>
+                </div>
+
+                <!-- Gap Identification Form -->
+                <div class="gap-form" id="gap-form" style="display: none;">
+                    <h3>Propose New Process</h3>
+                    <p>No matching process found. Help us identify gaps in the hierarchy.</p>
+                    <form id="proposal-form">
+                        <div class="form-group">
+                            <label for="scenario-desc">Scenario Description:</label>
+                            <textarea id="scenario-desc" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="suggested-level">Suggested Level:</label>
+                            <select id="suggested-level" required>
+                                <option value="">Select level</option>
+                                <option value="L1">Level 1</option>
+                                <option value="L2">Level 2</option>
+                                <option value="L3">Level 3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="suggested-parent">Suggested Parent Process:</label>
+                            <input type="text" id="suggested-parent" placeholder="Optional">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit">Submit Proposal</button>
+                            <button type="button" id="cancel-proposal">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="navigation.js"></script>
+    <script src="tree-visualization.js"></script>
+    <script src="search.js"></script>
+</body>
+</html>
