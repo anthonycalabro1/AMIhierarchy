@@ -16,6 +16,13 @@ function initializeTreeView() {
         return;
     }
     
+    // Check if tree view is actually active
+    const treeViewPanel = document.getElementById('tree-view');
+    if (!treeViewPanel || !treeViewPanel.classList.contains('active')) {
+        console.log('Tree view: Not active, skipping initialization');
+        return;
+    }
+    
     console.log('Initializing tree view...');
     
     const container = document.getElementById('tree-container');
@@ -66,8 +73,14 @@ function initializeTreeView() {
     
     // Define diagonal for links
     treeDiagonal = d3.linkHorizontal()
-        .x(d => d.y || 0)
-        .y(d => d.x || 0);
+        .x(d => {
+            if (!d || d.y === undefined) return 0;
+            return d.y;
+        })
+        .y(d => {
+            if (!d || d.x === undefined) return 0;
+            return d.x;
+        });
     
     // Initialize filters
     initializeTreeFilters();
@@ -144,7 +157,14 @@ function updateTree(source) {
     
     // Normalize for fixed-depth
     nodes.forEach(d => {
-        d.y = d.depth * 250;
+        if (d.depth !== undefined) {
+            d.y = d.depth * 250;
+        } else {
+            d.y = 0;
+        }
+        if (d.x === undefined) {
+            d.x = d.x0 || 0;
+        }
     });
     
     // Initialize source if not provided
@@ -186,7 +206,11 @@ function updateTree(source) {
     
     nodeUpdate.transition()
         .duration(750)
-        .attr('transform', d => `translate(${d.y},${d.x})`);
+        .attr('transform', d => {
+            const x = d.x !== undefined ? d.x : (d.x0 || 0);
+            const y = d.y !== undefined ? d.y : (d.y0 || 0);
+            return `translate(${y},${x})`;
+        });
     
     nodeUpdate.select('circle')
         .attr('r', 8)
@@ -199,13 +223,23 @@ function updateTree(source) {
     const linkEnter = link.enter().insert('path', 'g')
         .attr('class', 'link')
         .attr('d', d => {
-            const o = { x: source.x0, y: source.y0 };
+            if (!source || source.x0 === undefined || source.y0 === undefined) {
+                return treeDiagonal({ source: { x: 0, y: 0 }, target: { x: 0, y: 0 } });
+            }
+            const o = { x: source.x0 || 0, y: source.y0 || 0 };
             return treeDiagonal({ source: o, target: o });
         });
     
     linkEnter.merge(link).transition()
         .duration(750)
-        .attr('d', treeDiagonal);
+        .attr('d', d => {
+            if (!d || !d.source || !d.target) {
+                return 'M0,0 L0,0';
+            }
+            const source = { x: d.source.x || 0, y: d.source.y || 0 };
+            const target = { x: d.target.x || 0, y: d.target.y || 0 };
+            return treeDiagonal({ source, target });
+        });
     
     link.exit().transition()
         .duration(750)
