@@ -39,9 +39,10 @@ async function loadData() {
         if (typeof initializeNavigation === 'function') {
             initializeNavigation();
         }
-        if (typeof initializeTreeView === 'function') {
-            initializeTreeView();
-        }
+        // Don't initialize tree view on load - wait until user switches to it
+        // if (typeof initializeTreeView === 'function') {
+        //     initializeTreeView();
+        // }
         if (typeof initializeSearch === 'function') {
             initializeSearch();
         }
@@ -480,6 +481,17 @@ function switchView(view) {
     const targetPanel = document.getElementById(`${view}-view`);
     if (targetPanel) {
         targetPanel.classList.add('active');
+    }
+    
+    // Initialize tree view only when switching to it
+    if (view === 'tree' && typeof initializeTreeView === 'function') {
+        // Small delay to ensure container is visible and sized
+        setTimeout(() => {
+            const treeContainer = document.getElementById('tree-container');
+            if (treeContainer && !treeContainer.querySelector('svg')) {
+                initializeTreeView();
+            }
+        }, 100);
     }
 }
 

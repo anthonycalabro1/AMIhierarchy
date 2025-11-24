@@ -34,12 +34,25 @@ function initializeTreeView() {
     // Convert hierarchy to tree format
     treeData = convertToTreeFormat(hierarchyData);
     
+    if (!treeData || !treeData.children || treeData.children.length === 0) {
+        console.error('No tree data to display');
+        return;
+    }
+    
     // Set up D3 tree layout
     tree = d3.tree()
         .size([treeHeight - 100, treeWidth - 200])
-        .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+        .separation((a, b) => {
+            if (!a.parent || !b.parent) return 1;
+            return (a.parent === b.parent ? 1 : 2) / (a.depth || 1);
+        });
     
     treeRoot = d3.hierarchy(treeData);
+    if (!treeRoot) {
+        console.error('Failed to create hierarchy');
+        return;
+    }
+    
     treeRoot.x0 = treeHeight / 2;
     treeRoot.y0 = 0;
     
@@ -53,8 +66,8 @@ function initializeTreeView() {
     
     // Define diagonal for links
     treeDiagonal = d3.linkHorizontal()
-        .x(d => d.y)
-        .y(d => d.x);
+        .x(d => d.y || 0)
+        .y(d => d.x || 0);
     
     // Initialize filters
     initializeTreeFilters();
@@ -121,9 +134,11 @@ function convertToTreeFormat(hierarchyData) {
 }
 
 function updateTree(source) {
-    if (!treeSvg || !tree) return;
+    if (!treeSvg || !tree || !treeRoot) return;
     
     const treeData = tree(treeRoot);
+    if (!treeData) return;
+    
     const nodes = treeData.descendants();
     const links = treeData.descendants().slice(1);
     
@@ -131,6 +146,15 @@ function updateTree(source) {
     nodes.forEach(d => {
         d.y = d.depth * 250;
     });
+    
+    // Initialize source if not provided
+    if (!source) {
+        source = treeRoot;
+    }
+    if (source.x0 === undefined) source.x0 = treeHeight / 2;
+    if (source.y0 === undefined) source.y0 = 0;
+    if (source.x === undefined) source.x = source.x0;
+    if (source.y === undefined) source.y = source.y0;
     
     // Update nodes
     const node = treeSvg.selectAll('g.node')
@@ -186,14 +210,14 @@ function updateTree(source) {
     link.exit().transition()
         .duration(750)
         .attr('d', d => {
-            const o = { x: source.x, y: source.y };
+            const o = { x: source.x || source.x0 || 0, y: source.y || source.y0 || 0 };
             return treeDiagonal({ source: o, target: o });
         })
         .remove();
     
     node.exit().transition()
         .duration(750)
-        .attr('transform', d => `translate(${source.y},${source.x})`)
+        .attr('transform', d => `translate(${source.y || source.y0 || 0},${source.x || source.x0 || 0})`)
         .remove();
     
     nodes.forEach(d => {
@@ -228,18 +252,22 @@ function collapse(d) {
 }
 
 function expandAllNodes(node) {
+    if (!treeRoot) return;
     if (!node) node = treeRoot;
     if (node.children) {
         node.children.forEach(expandAllNodes);
     } else if (node._children) {
         node.children = node._children;
         node._children = null;
-        node.children.forEach(expandAllNodes);
+        if (node.children) {
+            node.children.forEach(expandAllNodes);
+        }
     }
     updateTree(node);
 }
 
 function collapseAllNodes(node) {
+    if (!treeRoot) return;
     if (!node) node = treeRoot;
     if (node.children) {
         node.children.forEach(collapseAllNodes);
